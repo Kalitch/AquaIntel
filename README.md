@@ -33,6 +33,7 @@ accessible and translates hydrological measurements into AI sustainability equiv
 **Live data from the U.S. Geological Survey. No mocked data. No paid AI APIs. Fully explainable.**
 
 ---
+<img width="3024" height="3146" alt="image" src="https://github.com/user-attachments/assets/c6d3d24b-4887-459d-baeb-b4ba70b80903" />
 
 ## Architecture
 
