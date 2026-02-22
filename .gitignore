@@ -1,0 +1,64 @@
+# Node modules
+node_modules/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Runtime env files
+.env
+.env.*
+
+# Build output
+/dist/
+/build/
+/out/
+/coverage/
+.nyc_output/
+
+# TypeScript
+*.tsbuildinfo
+
+# Frontend
+/frontend/node_modules/
+/frontend/dist/
+/frontend/build/
+/frontend/.parcel-cache/
+
+# Backend (NestJS)
+/backend/node_modules/
+/backend/dist/
+
+# Docker
+docker-compose.override.yml
+docker-compose.*.yml
+
+# Editor directories and files
+.vscode/
+.idea/
+*.sublime-workspace
+
+# macOS
+.DS_Store
+
+# Misc caches
+.cache/
+.parcel-cache/
+.turbo/
+.vite/
+
+# Test/coverage
+.jest_cache/
+coverage/
+
+# Security
+*.pem
+*.key
+
+# Other
+*.tgz
+*.local
