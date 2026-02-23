@@ -9,5 +9,6 @@ import { AnalyticsModule } from '../analytics/analytics.module';
   imports: [WaterModule, AiImpactModule, AnalyticsModule],
   providers: [IntelligenceService],
   controllers: [IntelligenceController],
+  exports: [IntelligenceService],
 })
 export class IntelligenceModule {}

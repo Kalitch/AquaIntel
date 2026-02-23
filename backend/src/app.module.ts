@@ -4,6 +4,7 @@ import { WaterModule } from './water/water.module';
 import { AiImpactModule } from './ai-impact/ai-impact.module';
 import { IntelligenceModule } from './intelligence/intelligence.module';
 import { AnalyticsModule } from './analytics/analytics.module';
+import { LlmModule } from './llm/llm.module';
 import { HealthController } from './health.controller';
 
 @Module({
@@ -16,6 +17,7 @@ import { HealthController } from './health.controller';
     AiImpactModule,
     IntelligenceModule,
     AnalyticsModule,
+    LlmModule,
   ],
   controllers: [HealthController],
 })

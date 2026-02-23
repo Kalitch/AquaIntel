@@ -13,6 +13,7 @@ import { AiImpactCards } from '../components/dashboard/AiImpactCards';
 import { StationSearch } from '../components/dashboard/StationSearch';
 import { useStation } from '../hooks/useStation';
 import { useIntelligence } from '../hooks/useApi';
+import { NarrativePanel } from '../components/intelligence/NarrativePanel';
 
 export function IntelligencePage() {
   const { stationId, stationName, setStation } = useStation();
@@ -71,6 +72,11 @@ export function IntelligencePage() {
                 </Card>
               </Grid>
             </Grid>
+          )}
+          {data && !loading && (
+            <Box sx={{ mt: 3 }}>
+              <NarrativePanel />
+            </Box>
           )}
         </>
       )}

@@ -73,3 +73,16 @@ export interface AnalyticsSummary {
   topStations: Array<{ stationId: string; queryCount: number }>;
   uptimeSince: string;
 }
+
+export interface NarrativeResponse {
+  narrative: string;
+  provider: 'local' | 'openai' | 'anthropic';
+  model: string;
+  generatedAt: string;
+}
+
+export interface LlmStatus {
+  provider: 'local' | 'openai' | 'anthropic';
+  model: string;
+  available: boolean;
+}

@@ -4,6 +4,7 @@ import {
   IntelligenceResponse,
   WaterStation,
   AnalyticsSummary,
+  NarrativeResponse,
 } from '../types/api.types';
 
 // ─── useIntelligence ──────────────────────────────────────────────────────────
@@ -105,3 +106,44 @@ export function useAnalytics(): UseAnalyticsResult {
 
   return { summary, loading, error };
 }
+
+// ─── useNarrative ───────────────────────────────────────────────────────────
+
+interface UseNarrativeResult {
+  data: NarrativeResponse | null;
+  loading: boolean;
+  error: string | null;
+  generate: () => Promise<void>;
+}
+
+export function useNarrative(
+  stationId: string | null,
+  stationName?: string,
+): UseNarrativeResult {
+  const [data, setData] = useState<NarrativeResponse | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const generate = useCallback(async () => {
+    if (!stationId) return;
+    setLoading(true);
+    setError(null);
+    setData(null);
+    try {
+      const params = new URLSearchParams({ stationId });
+      if (stationName) params.set('stationName', stationName);
+      const res = await apiClient.get<NarrativeResponse>(
+        `/intelligence/narrative?${params.toString()}`,
+      );
+      setData(res.data);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to generate narrative';
+      setError(msg);
+    } finally {
+      setLoading(false);
+    }
+  }, [stationId, stationName]);
+
+  return { data, loading, error, generate };
+}
+
