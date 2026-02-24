@@ -32,7 +32,15 @@ export function StationSearch({ onSelect }: StationSearchProps) {
   const { stations, loading, error } = useStations(committedState);
 
   const handleStateSearch = () => {
-    setCommittedState(selectedState);
+    // If user re-submits the same state after an error or no-op,
+    // briefly clear committedState to force the fetch effect in `useStations`.
+    if (selectedState && committedState === selectedState) {
+      setCommittedState(null);
+      // small delay to ensure state change is observed
+      setTimeout(() => setCommittedState(selectedState), 0);
+    } else {
+      setCommittedState(selectedState);
+    }
   };
 
   const handleManualSearch = () => {

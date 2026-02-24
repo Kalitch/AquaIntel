@@ -157,6 +157,49 @@ export class LlmService {
     }
   }
 
+  /**
+   * Generate a free-form narrative directly from a raw prompt string.
+   * This bypasses the station prompt templating and sends the prompt as-is.
+   */
+  async generateRawNarrative(prompt: string): Promise<NarrativeResponse> {
+    this.logger.log(
+      `Generating raw narrative via ${this.config.provider}/${this.config.model}`,
+    );
+
+    try {
+      let narrative: string;
+
+      if (this.config.provider === 'anthropic' && this.anthropicClient) {
+        // For Anthropic, we avoid a system prompt here and send the user prompt directly
+        narrative = await this.callAnthropic(prompt);
+      } else if (this.openaiClient) {
+        // For OpenAI-compatible clients, send the prompt as a single user message
+        const completion = await this.openaiClient.chat.completions.create({
+          model: this.config.model,
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0.3,
+          max_tokens: 600,
+        });
+        narrative = completion.choices[0]?.message?.content?.trim() ?? 'No response generated.';
+      } else {
+        throw new Error('No LLM client initialized');
+      }
+
+      narrative = this.stripPreamble(narrative);
+
+      return {
+        narrative,
+        provider: this.config.provider,
+        model: this.config.model,
+        generatedAt: new Date().toISOString(),
+      };
+    } catch (err) {
+      const message = (err as Error).message;
+      this.logger.error(`LLM raw generation failed: ${message}`);
+      throw new HttpException(`LLM generation failed: ${message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
   private async callOpenAiCompatible(userPrompt: string): Promise<string> {
     const completion = await this.openaiClient!.chat.completions.create({
       model: this.config.model,

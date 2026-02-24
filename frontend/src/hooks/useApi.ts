@@ -5,6 +5,9 @@ import {
   WaterStation,
   AnalyticsSummary,
   NarrativeResponse,
+  NewsFeedResponse,
+  LegislationResponse,
+  NewsCategory,
 } from '../types/api.types';
 
 // ─── useIntelligence ──────────────────────────────────────────────────────────
@@ -145,5 +148,49 @@ export function useNarrative(
   }, [stationId, stationName]);
 
   return { data, loading, error, generate };
+}
+
+
+// ─── useNews & useLegislation ─────────────────────────────────────────────────
+
+export function useNews(category?: NewsCategory) {
+  const [data, setData] = useState<NewsFeedResponse | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const params = category ? `?category=${category}` : '';
+
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+    apiClient
+      .get<NewsFeedResponse>(`/news${params}`)
+      .then((res) => setData(res.data))
+      .catch((err: unknown) => {
+        setError(err instanceof Error ? err.message : 'Failed to fetch news');
+      })
+      .finally(() => setLoading(false));
+  }, [category]);
+
+  return { data, loading, error };
+}
+
+export function useLegislation(aiOnly = false) {
+  const [data, setData] = useState<LegislationResponse | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLoading(true);
+    apiClient
+      .get<LegislationResponse>(`/legislation${aiOnly ? '?aiOnly=true' : ''}`)
+      .then((res) => setData(res.data))
+      .catch((err: unknown) => {
+        setError(err instanceof Error ? err.message : 'Failed to fetch legislation');
+      })
+      .finally(() => setLoading(false));
+  }, [aiOnly]);
+
+  return { data, loading, error };
 }
 

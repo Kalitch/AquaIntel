@@ -9,6 +9,7 @@ import { HistoricalPage } from './pages/HistoricalPage';
 import { IntelligencePage } from './pages/IntelligencePage';
 import { AnalyticsPage } from './pages/AnalyticsPage';
 import { AboutPage } from './pages/AboutPage';
+import { LegislationPage } from './pages/LegislationPage';
 
 export default function App() {
   return (
@@ -21,6 +22,7 @@ export default function App() {
             <Route path="/" element={<DashboardPage />} />
             <Route path="/historical" element={<HistoricalPage />} />
             <Route path="/intelligence" element={<IntelligencePage />} />
+            <Route path="/legislation" element={<LegislationPage />} />
             <Route path="/analytics" element={<AnalyticsPage />} />
             <Route path="/about" element={<AboutPage />} />
           </Routes>

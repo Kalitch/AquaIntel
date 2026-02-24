@@ -20,12 +20,14 @@ import TimelineIcon from '@mui/icons-material/Timeline';
 import PsychologyIcon from '@mui/icons-material/Psychology';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import InfoIcon from '@mui/icons-material/Info';
+import GavelIcon from '@mui/icons-material/Gavel';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 const NAV_ITEMS = [
   { label: 'Dashboard', path: '/', icon: <DashboardIcon /> },
   { label: 'Historical', path: '/historical', icon: <TimelineIcon /> },
   { label: 'Intelligence', path: '/intelligence', icon: <PsychologyIcon /> },
+  { label: 'Legislation', path: '/legislation', icon: <GavelIcon /> },
   { label: 'Analytics', path: '/analytics', icon: <BarChartIcon /> },
   { label: 'About', path: '/about', icon: <InfoIcon /> },
 ];

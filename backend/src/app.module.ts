@@ -5,6 +5,8 @@ import { AiImpactModule } from './ai-impact/ai-impact.module';
 import { IntelligenceModule } from './intelligence/intelligence.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { LlmModule } from './llm/llm.module';
+import { NewsModule } from './news/news.module';
+import { LegislationModule } from './legislation/legislation.module';
 import { HealthController } from './health.controller';
 
 @Module({
@@ -18,6 +20,8 @@ import { HealthController } from './health.controller';
     IntelligenceModule,
     AnalyticsModule,
     LlmModule,
+    NewsModule,
+    LegislationModule,
   ],
   controllers: [HealthController],
 })

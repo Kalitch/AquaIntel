@@ -86,3 +86,52 @@ export interface LlmStatus {
   model: string;
   available: boolean;
 }
+
+export type NewsCategory = 'water' | 'legislation' | 'ai' | 'drought' | 'general';
+
+export type BillStatus =
+  | 'introduced'
+  | 'committee'
+  | 'passed_chamber'
+  | 'signed'
+  | 'vetoed'
+  | 'failed'
+  | 'monitoring';
+
+export interface RssItem {
+  title: string;
+  link: string;
+  description: string;
+  pubDate: string;
+  source: string;
+  category: NewsCategory;
+}
+
+export interface NewsFeedResponse {
+  items: RssItem[];
+  fetchedAt: string;
+  totalSources: number;
+  failedSources: string[];
+}
+
+export interface WaterBill {
+  id: string;
+  title: string;
+  shortTitle: string;
+  scope: string;
+  status: BillStatus;
+  sponsor?: string;
+  date: string;
+  summary: string;
+  url: string;
+  tags: string[];
+  aiRelated: boolean;
+}
+
+export interface LegislationResponse {
+  bills: WaterBill[];
+  lastUpdated: string;
+  totalBills: number;
+  byStatus: Partial<Record<BillStatus, number>>;
+  byScope: { federal: number; state: number };
+}
