@@ -7,9 +7,14 @@ import {
   CircularProgress,
   Typography,
   Alert,
+  IconButton,
+  Snackbar,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
+import BookmarkAddIcon from '@mui/icons-material/BookmarkAdd';
+import BookmarkIcon from '@mui/icons-material/Bookmark';
 import { useStations } from '../../hooks/useApi';
+import { useWatchlist } from '../../hooks/useWatchlist';
 import { WaterStation } from '../../types/api.types';
 
 const US_STATES = [
@@ -28,15 +33,16 @@ export function StationSearch({ onSelect }: StationSearchProps) {
   const [selectedState, setSelectedState] = useState<string | null>(null);
   const [committedState, setCommittedState] = useState<string | null>(null);
   const [manualId, setManualId] = useState('');
+  const [activeStation, setActiveStation] = useState<{ id: string; name: string } | null>(null);
+  const [toastOpen, setToastOpen] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const { watched, addStation, removeStation, isWatched } = useWatchlist();
 
   const { stations, loading, error } = useStations(committedState);
 
   const handleStateSearch = () => {
-    // If user re-submits the same state after an error or no-op,
-    // briefly clear committedState to force the fetch effect in `useStations`.
     if (selectedState && committedState === selectedState) {
       setCommittedState(null);
-      // small delay to ensure state change is observed
       setTimeout(() => setCommittedState(selectedState), 0);
     } else {
       setCommittedState(selectedState);
@@ -46,7 +52,25 @@ export function StationSearch({ onSelect }: StationSearchProps) {
   const handleManualSearch = () => {
     if (manualId.trim()) {
       onSelect(manualId.trim(), `Station ${manualId.trim()}`);
+      setActiveStation({ id: manualId.trim(), name: `Station ${manualId.trim()}` });
     }
+  };
+
+  const handleStationSelect = (station: WaterStation) => {
+    onSelect(station.id, station.name);
+    setActiveStation({ id: station.id, name: station.name });
+  };
+
+  const handleToggleWatchlist = () => {
+    if (!activeStation) return;
+    if (isWatched(activeStation.id)) {
+      removeStation(activeStation.id);
+      setToastMessage('Removed from watchlist');
+    } else {
+      addStation(activeStation.id, activeStation.name);
+      setToastMessage('Added to watchlist');
+    }
+    setToastOpen(true);
   };
 
   return (
@@ -82,7 +106,7 @@ export function StationSearch({ onSelect }: StationSearchProps) {
           options={stations}
           getOptionLabel={(s: WaterStation) => `${s.id} — ${s.name}`}
           onChange={(_, station) => {
-            if (station) onSelect(station.id, station.name);
+            if (station) handleStationSelect(station);
           }}
           renderInput={(params) => (
             <TextField {...params} label="Select Station" size="small" fullWidth />
@@ -90,6 +114,25 @@ export function StationSearch({ onSelect }: StationSearchProps) {
           sx={{ mb: 2 }}
           size="small"
         />
+      )}
+
+      {activeStation && (
+        <Box sx={{ mb: 2, p: 1.5, bgcolor: 'rgba(41,182,246,0.08)', borderRadius: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Typography variant="caption" color="primary">
+            Active: <strong>{activeStation.name}</strong>
+          </Typography>
+          <IconButton
+            size="small"
+            onClick={handleToggleWatchlist}
+            title={isWatched(activeStation.id) ? 'Remove from watchlist' : 'Add to watchlist'}
+          >
+            {isWatched(activeStation.id) ? (
+              <BookmarkIcon fontSize="small" color="primary" />
+            ) : (
+              <BookmarkAddIcon fontSize="small" />
+            )}
+          </IconButton>
+        </Box>
       )}
 
       <Typography variant="subtitle2" color="text.secondary" gutterBottom>
@@ -114,6 +157,13 @@ export function StationSearch({ onSelect }: StationSearchProps) {
           Load
         </Button>
       </Box>
+
+      <Snackbar
+        open={toastOpen}
+        autoHideDuration={3000}
+        onClose={() => setToastOpen(false)}
+        message={toastMessage}
+      />
     </Box>
   );
 }

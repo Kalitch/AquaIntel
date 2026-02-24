@@ -41,6 +41,16 @@ export class IntelligenceController {
       latestValue,
     );
 
+    // Fetch drought status and percentiles (enrichment — fail silently)
+    const coords = await this.waterService.getStationCoords(stationId);
+    const droughtStatus = coords
+      ? await this.waterService.getDroughtStatus(coords.lat, coords.lon)
+      : null;
+    const percentiles = await this.waterService.getFlowPercentiles(
+      stationId,
+      latestValue,
+    );
+
     return {
       stationId,
       retrievedAt: new Date().toISOString(),
@@ -65,6 +75,8 @@ export class IntelligenceController {
         anomaly: analyticsResult.anomaly,
         sustainabilityScore: analyticsResult.sustainabilityScore,
       },
+      droughtStatus,
+      percentiles,
     };
   }
 }

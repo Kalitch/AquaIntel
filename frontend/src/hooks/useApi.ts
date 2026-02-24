@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
-import { apiClient } from '../config/api';
+import { useState, useEffect, useCallback } from "react";
+import { apiClient } from "../config/api";
 import {
   IntelligenceResponse,
   WaterStation,
@@ -8,7 +8,8 @@ import {
   NewsFeedResponse,
   LegislationResponse,
   NewsCategory,
-} from '../types/api.types';
+} from "../types/api.types";
+import { useIntelligenceStore } from "../components/store/intelligenceStore";
 
 // ─── useIntelligence ──────────────────────────────────────────────────────────
 
@@ -19,28 +20,33 @@ interface UseIntelligenceResult {
   refetch: () => void;
 }
 
-export function useIntelligence(stationId: string | null): UseIntelligenceResult {
-  const [data, setData] = useState<IntelligenceResponse | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+export function useIntelligence(
+  stationId: string | null,
+): UseIntelligenceResult {
+  const { data, loading, error, isStale, setData, setLoading, setError } =
+    useIntelligenceStore();
 
   const fetch = useCallback(async () => {
     if (!stationId) return;
+    if (!isStale(stationId)) return; // already fresh — skip the request
+
     setLoading(true);
     setError(null);
     try {
       const res = await apiClient.get<IntelligenceResponse>(
         `/intelligence?stationId=${encodeURIComponent(stationId)}`,
       );
-      setData(res.data);
+      setData(stationId, res.data);
     } catch (err: unknown) {
-      const message =
-        err instanceof Error ? err.message : 'Failed to fetch intelligence data';
-      setError(message);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to fetch intelligence data",
+      );
     } finally {
       setLoading(false);
     }
-  }, [stationId]);
+  }, [stationId, isStale, setData, setLoading, setError]);
 
   useEffect(() => {
     void fetch();
@@ -58,27 +64,45 @@ interface UseStationsResult {
 }
 
 export function useStations(state: string | null): UseStationsResult {
-  const [stations, setStations] = useState<WaterStation[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    stationsLoading,
+    stationsError,
+    isStationsStale,
+    setStations,
+    setStationsLoading,
+    setStationsError,
+    getStations,
+  } = useIntelligenceStore();
 
   useEffect(() => {
     if (!state) return;
-    setLoading(true);
-    setError(null);
+    if (!isStationsStale(state)) return; // already fresh — skip the request
+
+    setStationsLoading(true);
+    setStationsError(null);
 
     apiClient
       .get<WaterStation[]>(`/stations?state=${encodeURIComponent(state)}`)
-      .then((res) => setStations(res.data))
-      .catch((err: unknown) => {
-        const message =
-          err instanceof Error ? err.message : 'Failed to fetch stations';
-        setError(message);
-      })
-      .finally(() => setLoading(false));
-  }, [state]);
+      .then((res) => setStations(state, res.data))
+      .catch((err: unknown) =>
+        setStationsError(
+          err instanceof Error ? err.message : "Failed to fetch stations",
+        ),
+      )
+      .finally(() => setStationsLoading(false));
+  }, [
+    state,
+    isStationsStale,
+    setStations,
+    setStationsLoading,
+    setStationsError,
+  ]);
 
-  return { stations, loading, error };
+  return {
+    stations: getStations(state ?? ""),
+    loading: stationsLoading,
+    error: stationsError,
+  };
 }
 
 // ─── useAnalytics ─────────────────────────────────────────────────────────────
@@ -97,11 +121,11 @@ export function useAnalytics(): UseAnalyticsResult {
   useEffect(() => {
     setLoading(true);
     apiClient
-      .get<AnalyticsSummary>('/analytics/summary')
+      .get<AnalyticsSummary>("/analytics/summary")
       .then((res) => setSummary(res.data))
       .catch((err: unknown) => {
         const message =
-          err instanceof Error ? err.message : 'Failed to fetch analytics';
+          err instanceof Error ? err.message : "Failed to fetch analytics";
         setError(message);
       })
       .finally(() => setLoading(false));
@@ -110,7 +134,7 @@ export function useAnalytics(): UseAnalyticsResult {
   return { summary, loading, error };
 }
 
-// ─── useNarrative ───────────────────────────────────────────────────────────
+// ─── useNarrative ─────────────────────────────────────────────────────────────
 
 interface UseNarrativeResult {
   data: NarrativeResponse | null;
@@ -134,13 +158,14 @@ export function useNarrative(
     setData(null);
     try {
       const params = new URLSearchParams({ stationId });
-      if (stationName) params.set('stationName', stationName);
+      if (stationName) params.set("stationName", stationName);
       const res = await apiClient.get<NarrativeResponse>(
         `/intelligence/narrative?${params.toString()}`,
       );
       setData(res.data);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to generate narrative';
+      const msg =
+        err instanceof Error ? err.message : "Failed to generate narrative";
       setError(msg);
     } finally {
       setLoading(false);
@@ -150,15 +175,14 @@ export function useNarrative(
   return { data, loading, error, generate };
 }
 
-
-// ─── useNews & useLegislation ─────────────────────────────────────────────────
+// ─── useNews ──────────────────────────────────────────────────────────────────
 
 export function useNews(category?: NewsCategory) {
   const [data, setData] = useState<NewsFeedResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const params = category ? `?category=${category}` : '';
+  const params = category ? `?category=${category}` : "";
 
   useEffect(() => {
     setLoading(true);
@@ -167,13 +191,15 @@ export function useNews(category?: NewsCategory) {
       .get<NewsFeedResponse>(`/news${params}`)
       .then((res) => setData(res.data))
       .catch((err: unknown) => {
-        setError(err instanceof Error ? err.message : 'Failed to fetch news');
+        setError(err instanceof Error ? err.message : "Failed to fetch news");
       })
       .finally(() => setLoading(false));
   }, [category]);
 
   return { data, loading, error };
 }
+
+// ─── useLegislation ───────────────────────────────────────────────────────────
 
 export function useLegislation(aiOnly = false) {
   const [data, setData] = useState<LegislationResponse | null>(null);
@@ -183,14 +209,15 @@ export function useLegislation(aiOnly = false) {
   useEffect(() => {
     setLoading(true);
     apiClient
-      .get<LegislationResponse>(`/legislation${aiOnly ? '?aiOnly=true' : ''}`)
+      .get<LegislationResponse>(`/legislation${aiOnly ? "?aiOnly=true" : ""}`)
       .then((res) => setData(res.data))
       .catch((err: unknown) => {
-        setError(err instanceof Error ? err.message : 'Failed to fetch legislation');
+        setError(
+          err instanceof Error ? err.message : "Failed to fetch legislation",
+        );
       })
       .finally(() => setLoading(false));
   }, [aiOnly]);
 
   return { data, loading, error };
 }
-

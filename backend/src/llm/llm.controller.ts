@@ -42,6 +42,12 @@ export class LlmController {
       latestValue,
     );
 
+    // Fetch drought status for context (enrichment only)
+    const coords = await this.waterService.getStationCoords(stationId);
+    const droughtStatus = coords
+      ? await this.waterService.getDroughtStatus(coords.lat, coords.lon)
+      : null;
+
     return this.llmService.generateStationNarrative({
       stationId,
       stationName,
@@ -54,7 +60,7 @@ export class LlmController {
         sustainabilityScore: analytics.sustainabilityScore,
       },
       aiImpact,
-      droughtSeverity: null, // wire up DroughtModule here in Phase 2
+      droughtSeverity: droughtStatus?.severity ?? null,
     });
   }
 

@@ -14,6 +14,7 @@ import { StationSearch } from '../components/dashboard/StationSearch';
 import { WaterMetricCards } from '../components/dashboard/WaterMetricCards';
 import { AiImpactCards } from '../components/dashboard/AiImpactCards';
 import { DatacenterDefaults } from '../components/dashboard/DatacenterDefaults';
+import { WatchlistPanel } from '../components/dashboard/WatchlistPanel';
 import { useStation } from '../hooks/useStation';
 import { useIntelligence } from '../hooks/useApi';
 import { scoreToColor, scoreToLabel } from '../utils/formatters';
@@ -59,6 +60,9 @@ export function DashboardPage() {
         </CardContent>
       </Card>
 
+      {/* Watched stations */}
+      <WatchlistPanel />
+
       {/* Live station data */}
       {stationId && (
         <Box sx={{ mb: 4 }}>
@@ -100,6 +104,8 @@ export function DashboardPage() {
                         sustainabilityScore={data.analytics.sustainabilityScore}
                         scoreLabel={scoreToLabel(data.analytics.sustainabilityScore)}
                         scoreColor={scoreToColor(data.analytics.sustainabilityScore)}
+                        drought={data.droughtStatus}
+                        percentiles={data.percentiles}
                       />
                     </CardContent>
                   </Card>

@@ -60,6 +60,8 @@ export interface IntelligenceResponse {
   };
   aiImpact: AiImpact | null;
   analytics: IntelligenceAnalytics;
+  droughtStatus: DroughtStatus | null;
+  percentiles: FlowPercentiles | null;
 }
 
 export interface AnalyticsSummary {
@@ -134,4 +136,32 @@ export interface LegislationResponse {
   totalBills: number;
   byStatus: Partial<Record<BillStatus, number>>;
   byScope: { federal: number; state: number };
+}
+
+export type DroughtSeverity =
+  | 'None'
+  | 'D0 - Abnormally Dry'
+  | 'D1 - Moderate Drought'
+  | 'D2 - Severe Drought'
+  | 'D3 - Extreme Drought'
+  | 'D4 - Exceptional Drought';
+
+export interface DroughtStatus {
+  severity: DroughtSeverity;
+  county: string;
+  stateAbbr: string;
+  validStart: string;
+  validEnd: string;
+  retrievedAt: string;
+}
+
+export interface FlowPercentiles {
+  p10: number | null;
+  p25: number | null;
+  p50: number | null;
+  p75: number | null;
+  p90: number | null;
+  currentPercentile: number | null;
+  interpretation: string;
+  recordYears: number | null;
 }
