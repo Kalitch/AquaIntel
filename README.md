@@ -34,6 +34,8 @@ accessible and translates hydrological measurements into AI sustainability equiv
 
 ---
 <img width="1903" height="2627" alt="image" src="https://github.com/user-attachments/assets/c4cb20f8-c7ca-42bd-ba5a-238fde7b4acf" /> 
+<img width="1920" height="927" alt="Screenshot 2026-02-24 at 10-45-09 Water Intelligence Platform" src="https://github.com/user-attachments/assets/7a16bdc2-2788-42d0-88fe-713f81c9e43a" />
+
 <img width="1903" height="1457" alt="image" src="https://github.com/user-attachments/assets/d0848491-211a-47bb-b1e5-41e72b8d08d6" /> 
 
 <img width="1903" height="1262" alt="Screenshot 2026-02-24 at 08-35-58 Water Intelligence Platform" src="https://github.com/user-attachments/assets/4a44dbc8-d5b3-4dc7-91af-122b7fd5cd14" />
