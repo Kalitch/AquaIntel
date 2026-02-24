@@ -33,7 +33,7 @@ accessible and translates hydrological measurements into AI sustainability equiv
 **Live data from the U.S. Geological Survey. No mocked data. No paid AI APIs. Fully explainable.**
 
 ---
-<img width="3024" height="3146" alt="image" src="https://github.com/user-attachments/assets/c6d3d24b-4887-459d-baeb-b4ba70b80903" />
+<img width="1903" height="2627" alt="image" src="https://github.com/user-attachments/assets/c4cb20f8-c7ca-42bd-ba5a-238fde7b4acf" /> 
 <img width="1903" height="1457" alt="image" src="https://github.com/user-attachments/assets/d0848491-211a-47bb-b1e5-41e72b8d08d6" /> 
 
 <img width="1903" height="1262" alt="Screenshot 2026-02-24 at 08-35-58 Water Intelligence Platform" src="https://github.com/user-attachments/assets/4a44dbc8-d5b3-4dc7-91af-122b7fd5cd14" />
