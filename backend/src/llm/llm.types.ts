@@ -34,6 +34,18 @@ export interface StationNarrativeInput {
     explanation: string;
   } | null;
   droughtSeverity?: string | null;
+  // Trimmed enrichment fields extracted from the full intelligence response.
+  // Never pass the raw IntelligenceResponse here — dailySeries is stripped.
+  enrichment?: {
+    percentileInterpretation: string | null;
+    currentPercentile: number | null;
+    recordYears: number | null;
+    stationStatusMessage: string | null;
+    stationActive: boolean;
+    p10: number | null;
+    p50: number | null;
+    p90: number | null;
+  } | null;
 }
 
 export interface NarrativeResponse {

@@ -29,6 +29,7 @@ const NAV_ITEMS = [
   { label: 'Intelligence', path: '/intelligence', icon: <PsychologyIcon /> },
   { label: 'Legislation', path: '/legislation', icon: <GavelIcon /> },
   { label: 'Analytics', path: '/analytics', icon: <BarChartIcon /> },
+  { label: 'History', path: '/history', icon: <DashboardIcon /> },
   { label: 'About', path: '/about', icon: <InfoIcon /> },
 ];
 

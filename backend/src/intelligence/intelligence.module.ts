@@ -4,9 +4,10 @@ import { IntelligenceController } from './intelligence.controller';
 import { WaterModule } from '../water/water.module';
 import { AiImpactModule } from '../ai-impact/ai-impact.module';
 import { AnalyticsModule } from '../analytics/analytics.module';
+import { HistoryModule } from '../history/history.module';
 
 @Module({
-  imports: [WaterModule, AiImpactModule, AnalyticsModule],
+  imports: [WaterModule, AiImpactModule, AnalyticsModule, HistoryModule],
   providers: [IntelligenceService],
   controllers: [IntelligenceController],
   exports: [IntelligenceService],

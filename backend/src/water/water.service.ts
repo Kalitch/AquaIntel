@@ -211,74 +211,153 @@ export class WaterService {
   async getWaterData(stationId: string): Promise<WaterData> {
     const key = `water:${stationId}`;
     const cached = this.getCache<WaterData>(key);
-    if (cached) return cached;
+    if (cached) {
+      this.logger.debug(`[CACHE HIT] Returning cached data for ${stationId}`);
+      return cached;
+    }
 
     const usgsId = this.toUsgsId(stationId);
+    this.logger.log(`[FETCH START] Fetching data for ${stationId} → ${usgsId}`);
 
     try {
+      this.logger.debug(`[TS-METADATA] Querying time-series-metadata for ${usgsId}`);
       const tsResponse = await this.http.get<UsgsFeatureCollection>(
-        "/collections/time-series-metadata/items",
+        '/collections/time-series-metadata/items',
         {
           params: {
             monitoring_location_id: usgsId,
-            parameter_code: "00060",
+            parameter_code: '00060',
             limit: 10,
-            f: "json",
+            f: 'json',
           },
         },
       );
 
-      const timeSeriesId = this.findDailyMeanTimeSeriesId(tsResponse.data);
-      if (!timeSeriesId) {
-        this.logger.warn(
-          `No daily mean discharge time series found for ${usgsId}`,
-        );
-        return { latest: null, dailySeries: [] };
+      const features = tsResponse.data?.features ?? [];
+      this.logger.debug(`[TS-METADATA] Found ${features.length} time series for ${usgsId}`);
+      if (features.length > 0) {
+        features.forEach((f, idx) => {
+          this.logger.debug(
+            `  [${idx}] comp_id=${f.properties?.['computation_identifier']} comp_period=${f.properties?.['computation_period_identifier']} param=${f.properties?.['parameter_code']} end=${f.properties?.['end']}`,
+          );
+        });
       }
 
-      this.logger.log(`Using time series ID: ${timeSeriesId}`);
+      const found = this.findDailyMeanTimeSeriesId(tsResponse.data);
+      this.logger.debug(`[SERIES-FOUND] ${found ? 'YES: ' + JSON.stringify(found) : 'NO'}`);
 
-      // ONE request only — derive latest from the series tail
-      const dailySeries = await this.fetchDailySeries(timeSeriesId);
+      if (!found) {
+        this.logger.warn(`No daily mean discharge series found for ${usgsId}`);
+        return {
+          latest: null,
+          dailySeries: [],
+          stationStatus: {
+            active: false,
+            lastRecordDate: null,
+            message:
+              'No streamflow data found for this station. It may not report discharge (parameter 00060).',
+          },
+        };
+      }
 
+      const { id: timeSeriesId, beginDate, endDate } = found;
+
+      // Determine if station is active (last record within 7 days)
+      const isActive = endDate
+        ? new Date(endDate) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+        : true;
+
+      this.logger.log(
+        `[STATION-STATUS] timeSeriesId=${timeSeriesId} | beginDate=${beginDate} | endDate=${endDate} | isActive=${isActive}`,
+      );
+
+      // Build status message
+      let statusMessage = '';
+      if (!isActive && endDate) {
+        const formatted = new Date(endDate).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        });
+        statusMessage = `This station was decommissioned or is inactive. Last record: ${formatted}. Historical data is shown below.`;
+      }
+
+      this.logger.log(`[FETCH-DAILY] Fetching data for timeSeriesId=${timeSeriesId}`);
+
+      // Fetch daily series — for inactive stations, fetch from begin date to end date
+      const dailySeries = isActive
+        ? await this.fetchDailySeries(timeSeriesId, 90)
+        : await this.fetchDailySeries(timeSeriesId, 90, beginDate, endDate);
+
+      this.logger.log(`[DAILY-FETCHED] Got ${dailySeries.length} daily records`);
+
+      // Latest = last item in sorted series
       const latest =
         dailySeries.length > 0
           ? {
               stationId,
-              parameter: "Streamflow",
+              parameter: 'Streamflow',
               unit: dailySeries[dailySeries.length - 1].unit,
               value: dailySeries[dailySeries.length - 1].value,
               timestamp:
-                dailySeries[dailySeries.length - 1].date + "T00:00:00.000Z",
+                dailySeries[dailySeries.length - 1].date + 'T00:00:00.000Z',
             }
           : null;
 
-      const data: WaterData = { latest, dailySeries };
+      const data: WaterData = {
+        latest,
+        dailySeries,
+        stationStatus: {
+          active: isActive,
+          lastRecordDate: endDate,
+          message: statusMessage,
+        },
+      };
+
       this.logger.log(
-        `Water data fetched: latest=${latest?.value ?? "null"}, dailySeries=${dailySeries.length} days`,
+        `[FETCH-COMPLETE] latest=${latest?.value ?? 'null'}, dailySeries=${dailySeries.length} days, active=${isActive}, message="${statusMessage}"`,
       );
+
       this.setCache(key, data);
       return data;
     } catch (err) {
       this.logger.error(`Failed to fetch water data for ${stationId}:`, err);
-      return { latest: null, dailySeries: [] };
+      return {
+        latest: null,
+        dailySeries: [],
+        stationStatus: {
+          active: false,
+          lastRecordDate: null,
+          message: 'Failed to fetch data for this station. Please try again.',
+        },
+      };
     }
   }
 
   private findDailyMeanTimeSeriesId(
     collection: UsgsFeatureCollection,
-  ): string | null {
+  ): { id: string; beginDate: string | null; endDate: string | null } | null {
     const features = collection?.features ?? [];
-    // Prefer daily mean (computation_identifier: 'Mean', computation_period_identifier: 'Daily')
+
+    // Look specifically for Daily Mean Discharge — no fallback to other types
     const daily = features.find(
       (f) =>
-        f.properties?.["computation_identifier"] === "Mean" &&
-        f.properties?.["computation_period_identifier"] === "Daily",
+        f.properties?.['computation_identifier'] === 'Mean' &&
+        f.properties?.['computation_period_identifier'] === 'Daily' &&
+        f.properties?.['parameter_code'] === '00060',
     );
-    if (daily?.properties?.["id"]) return String(daily.properties["id"]);
-    // Fallback to any discharge series
-    if (features[0]?.properties?.["id"])
-      return String(features[0].properties["id"]);
+
+    if (daily?.properties?.['id']) {
+      const beginDate = (daily.properties?.['begin'] as string | null) ?? null;
+      const endDate = (daily.properties?.['end'] as string | null) ?? null;
+      return {
+        id: String(daily.properties['id']),
+        beginDate: beginDate ? String(beginDate).split('T')[0] : null,
+        endDate: endDate ? String(endDate).split('T')[0] : null,
+      };
+    }
+
+    // No daily mean discharge series found at all
     return null;
   }
 
@@ -326,31 +405,63 @@ export class WaterService {
 
   private async fetchDailySeries(
     timeSeriesId: string,
+    days = 90,
+    beginDate?: string | null,
+    endDate?: string | null,
   ): Promise<DailyWaterValue[]> {
     try {
-      const endDate = new Date();
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() - 90);
-      const fmt = (d: Date) => d.toISOString().split("T")[0];
+      let start: string;
+      let end: string;
+
+      // For inactive stations with explicit date bounds, use them
+      if (beginDate && endDate) {
+        start = beginDate;
+        end = endDate;
+        this.logger.debug(
+          `[FETCH-DAILY-SERIES] Using explicit range: ${start} to ${end}`,
+        );
+      } else {
+        // For active stations, calculate backward from today
+        const endDateObj = new Date();
+        const startDateObj = new Date();
+        startDateObj.setDate(startDateObj.getDate() - days);
+        const fmt = (d: Date) => d.toISOString().split('T')[0];
+        start = fmt(startDateObj);
+        end = fmt(endDateObj);
+        this.logger.debug(
+          `[FETCH-DAILY-SERIES] Using recent range (${days} days): ${start} to ${end}`,
+        );
+      }
+
+      this.logger.debug(
+        `[FETCH-DAILY-SERIES] timeSeriesId=${timeSeriesId}, range: ${start} to ${end}`,
+      );
 
       const response = await this.http.get<UsgsDailyCollection>(
-        "/collections/daily/items", // ← was /collections/time-series/items
+        '/collections/daily/items',
         {
           params: {
             time_series_id: timeSeriesId,
-            time: `${fmt(startDate)}/${fmt(endDate)}`, // ← was 'datetime'
-            sortby: "time", // ← was 'time:A'
+            time: `${start}/${end}`,
+            sortby: 'time',
             limit: 100,
-            f: "json",
+            f: 'json',
           },
         },
       );
 
       const features = response.data?.features ?? [];
+      this.logger.debug(`[FETCH-DAILY-SERIES] Got ${features.length} features from API`);
+      if (features.length === 0) {
+        this.logger.warn(
+          `[FETCH-DAILY-SERIES] No features returned for timeSeriesId=${timeSeriesId}`,
+        );
+      }
+
       return this.normalizeDailySeries(features);
     } catch (err) {
       this.logger.error(
-        `Could not fetch daily series for ${timeSeriesId}:`,
+        `[FETCH-DAILY-SERIES] Could not fetch daily series for ${timeSeriesId}:`,
         err,
       );
       return [];

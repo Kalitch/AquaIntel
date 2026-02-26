@@ -16,6 +16,7 @@ import { PercentileBar } from '../components/dashboard/PercentileBar';
 import { useStation } from '../hooks/useStation';
 import { useIntelligence } from '../hooks/useApi';
 import { NarrativePanel } from '../components/intelligence/NarrativePanel';
+import { StationStatusBanner } from '../components/shared/StationStatusBanner';
 
 export function IntelligencePage() {
   const { stationId, stationName, setStation } = useStation();
@@ -49,6 +50,8 @@ export function IntelligencePage() {
             </Typography>
             <DroughtBadge drought={data?.droughtStatus ?? null} />
           </Box>
+
+          <StationStatusBanner stationStatus={data?.stationStatus} />
 
           {loading && (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>

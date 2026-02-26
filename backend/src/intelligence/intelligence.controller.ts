@@ -5,6 +5,7 @@ import { WaterService } from '../water/water.service';
 import { AiImpactService } from '../ai-impact/ai-impact.service';
 import { AnalyticsInterceptor } from '../common/interceptors/analytics.interceptor';
 import { AnalyticsService } from '../analytics/analytics.service';
+import { HistoryService } from '../history/history.service';
 
 class IntelligenceQueryDto {
   @IsString()
@@ -20,6 +21,7 @@ export class IntelligenceController {
     private readonly waterService: WaterService,
     private readonly aiImpactService: AiImpactService,
     private readonly analyticsService: AnalyticsService,
+    private readonly historyService: HistoryService,
   ) {}
 
   @Get()
@@ -51,7 +53,7 @@ export class IntelligenceController {
       latestValue,
     );
 
-    return {
+    const response = {
       stationId,
       retrievedAt: new Date().toISOString(),
       water: {
@@ -77,6 +79,27 @@ export class IntelligenceController {
       },
       droughtStatus,
       percentiles,
+      stationStatus: waterData.stationStatus,
     };
+
+    // Fire-and-forget snapshot write — do not block the response
+    try {
+      void this.historyService.writeSnapshot({
+        stationId,
+        flowValue: response.water.latest?.value ?? null,
+        flowUnit: response.water.latest?.unit ?? null,
+        sustainabilityScore: response.analytics.sustainabilityScore,
+        anomalySeverity: response.analytics.anomaly.severity,
+        droughtSeverity: response.droughtStatus?.severity ?? null,
+        currentPercentile: response.percentiles?.currentPercentile ?? null,
+        movingAvg7: response.analytics.movingAverage7,
+        movingAvg30: response.analytics.movingAverage30,
+        volatilityIndex: response.analytics.volatilityIndex,
+      });
+    } catch (e) {
+      // Ensure we never let history writes affect the response
+    }
+
+    return response;
   }
 }

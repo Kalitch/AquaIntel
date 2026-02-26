@@ -12,7 +12,7 @@ import {
 } from '@mui/material';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import RefreshIcon from '@mui/icons-material/Refresh';
-import { useNarrative } from '../../hooks/useApi';
+import { useNarrative, useIntelligence } from '../../hooks/useApi';
 import { useStation } from '../../hooks/useStation';
 
 const PROVIDER_COLORS: Record<string, string> = {
@@ -29,9 +29,12 @@ const PROVIDER_LABELS: Record<string, string> = {
 
 export function NarrativePanel() {
   const { stationId, stationName } = useStation();
+  const { data: intelligenceData } = useIntelligence(stationId);
   const { data, loading, error, generate } = useNarrative(
     stationId,
     stationName,
+    // pass current intensity data so LLM can use full scope
+    intelligenceData,
   );
 
   return (

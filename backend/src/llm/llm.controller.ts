@@ -1,9 +1,10 @@
-import { Controller, Get, Query } from '@nestjs/common';
-import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
+import { Controller, Get, Query, Post, Body } from '@nestjs/common';
+import { IsString, IsNotEmpty, IsOptional, IsObject } from 'class-validator';
 import { LlmService } from './llm.service';
 import { IntelligenceService } from '../intelligence/intelligence.service';
 import { WaterService } from '../water/water.service';
 import { AiImpactService } from '../ai-impact/ai-impact.service';
+ 
 
 class NarrativeQueryDto {
   @IsString()
@@ -13,6 +14,21 @@ class NarrativeQueryDto {
   @IsOptional()
   @IsString()
   stationName?: string;
+}
+
+class NarrativePostDto {
+  @IsString()
+  @IsNotEmpty()
+  stationId!: string;
+
+  @IsOptional()
+  @IsString()
+  stationName?: string;
+
+  // accept raw intelligence payload from frontend
+  @IsOptional()
+  @IsObject()
+  intelligence?: any;
 }
 
 @Controller('intelligence')
@@ -27,6 +43,7 @@ export class LlmController {
   // GET /intelligence/narrative?stationId=XXXX&stationName=optional
   @Get('narrative')
   async getNarrative(@Query() query: NarrativeQueryDto) {
+    // fallback for backward compatibility
     const { stationId, stationName } = query;
 
     const waterData = await this.waterService.getWaterData(stationId);
@@ -62,6 +79,42 @@ export class LlmController {
       aiImpact,
       droughtSeverity: droughtStatus?.severity ?? null,
     });
+  }
+
+  @Post('narrative')
+  async postNarrative(@Body() body: NarrativePostDto) {
+    const { stationId, stationName, intelligence } = body;
+
+    // if full intelligence payload provided use it directly
+    if (intelligence) {
+      // Extract only what the prompt needs — never pass dailySeries to the LLM
+      const enrichment = intelligence.percentiles
+        ? {
+            percentileInterpretation: intelligence.percentiles.interpretation ?? null,
+            currentPercentile: intelligence.percentiles.currentPercentile ?? null,
+            recordYears: intelligence.percentiles.recordYears ?? null,
+            stationActive: intelligence.stationStatus?.active ?? true,
+            stationStatusMessage: intelligence.stationStatus?.message ?? null,
+            p10: intelligence.percentiles.p10 ?? null,
+            p50: intelligence.percentiles.p50 ?? null,
+            p90: intelligence.percentiles.p90 ?? null,
+          }
+        : null;
+
+      return this.llmService.generateStationNarrative({
+        stationId,
+        stationName,
+        latest: intelligence.water?.latest ?? null,
+        analytics: intelligence.analytics,
+        aiImpact: intelligence.aiImpact ?? null,
+        droughtSeverity: intelligence.droughtStatus?.severity ?? null,
+        enrichment,
+        // intelligence field intentionally omitted — dailySeries stripped
+      });
+    }
+
+    // otherwise fall back to GET logic
+    return this.getNarrative({ stationId, stationName });
   }
 
   // GET /intelligence/llm-status

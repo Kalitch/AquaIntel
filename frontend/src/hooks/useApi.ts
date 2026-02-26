@@ -8,6 +8,8 @@ import {
   NewsFeedResponse,
   LegislationResponse,
   NewsCategory,
+  StationHistoryResponse,
+  PlatformSummary,
 } from "../types/api.types";
 import { useIntelligenceStore } from "../components/store/intelligenceStore";
 
@@ -146,6 +148,7 @@ interface UseNarrativeResult {
 export function useNarrative(
   stationId: string | null,
   stationName?: string,
+  intelligenceData?: IntelligenceResponse | null,
 ): UseNarrativeResult {
   const [data, setData] = useState<NarrativeResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -157,12 +160,26 @@ export function useNarrative(
     setError(null);
     setData(null);
     try {
-      const params = new URLSearchParams({ stationId });
-      if (stationName) params.set("stationName", stationName);
-      const res = await apiClient.get<NarrativeResponse>(
-        `/intelligence/narrative?${params.toString()}`,
-      );
-      setData(res.data);
+      // POST intelligence data if available, otherwise fall back to query params
+      if (intelligenceData) {
+        const body = {
+          stationId,
+          stationName,
+          intelligence: intelligenceData,
+        };
+        const res = await apiClient.post<NarrativeResponse>(
+          `/intelligence/narrative`,
+          body,
+        );
+        setData(res.data);
+      } else {
+        const params = new URLSearchParams({ stationId });
+        if (stationName) params.set("stationName", stationName);
+        const res = await apiClient.get<NarrativeResponse>(
+          `/intelligence/narrative?${params.toString()}`,
+        );
+        setData(res.data);
+      }
     } catch (err: unknown) {
       const msg =
         err instanceof Error ? err.message : "Failed to generate narrative";
@@ -170,7 +187,7 @@ export function useNarrative(
     } finally {
       setLoading(false);
     }
-  }, [stationId, stationName]);
+  }, [stationId, stationName, intelligenceData]);
 
   return { data, loading, error, generate };
 }
@@ -218,6 +235,44 @@ export function useLegislation(aiOnly = false) {
       })
       .finally(() => setLoading(false));
   }, [aiOnly]);
+
+  return { data, loading, error };
+}
+
+// ─── useHistory hooks ───────────────────────────────────────────────────────
+
+export function useStationHistory(stationId: string | null, days = 90) {
+  const [data, setData] = useState<StationHistoryResponse | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!stationId) return;
+    setLoading(true);
+    setError(null);
+    apiClient
+      .get<StationHistoryResponse>(`/history/${encodeURIComponent(stationId)}?days=${days}`)
+      .then((res) => setData(res.data))
+      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Failed to fetch history'))
+      .finally(() => setLoading(false));
+  }, [stationId, days]);
+
+  return { data, loading, error };
+}
+
+export function usePlatformSummary() {
+  const [data, setData] = useState<PlatformSummary | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLoading(true);
+    apiClient
+      .get<PlatformSummary>('/history/platform/summary')
+      .then((res) => setData(res.data))
+      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Failed to fetch platform summary'))
+      .finally(() => setLoading(false));
+  }, []);
 
   return { data, loading, error };
 }

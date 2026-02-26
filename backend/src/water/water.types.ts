@@ -21,9 +21,16 @@ export interface DailyWaterValue {
   unit: string;
 }
 
+export interface StationStatus {
+  active: boolean;
+  lastRecordDate: string | null;  // ISO date string e.g. "2020-06-30"
+  message: string;                // Human-readable explanation
+}
+
 export interface WaterData {
   latest: WaterReading | null;
   dailySeries: DailyWaterValue[];
+  stationStatus: StationStatus;
 }
 
 // Raw USGS OGC API response shapes

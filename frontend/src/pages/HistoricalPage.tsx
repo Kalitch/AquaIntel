@@ -57,7 +57,7 @@ export function HistoricalPage() {
           </Typography>
 
           {/* Date range filter */}
-          <Card sx={{ mb: 3 }}>
+          <Card sx={{ mb: 3 }} hidden={true}>
             <CardContent>
               <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                 Date Range Filter

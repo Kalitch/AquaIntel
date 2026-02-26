@@ -11,31 +11,31 @@ export class NewsService {
   private readonly cacheTtlMs = Number(
     process.env.NEWS_CACHE_TTL_MS ?? 3600000,
   );
-
+ 
   private readonly FEEDS: RssFeed[] = [
     {
       name: "EPA Newsroom",
-      url: "https://19january2021snapshot.epa.gov/newsreleases/releases/rss/subject/water_.html",
+      url: "https://www.epa.gov/newsroom/recent-press-releases/rss.xml",
       category: "water",
-      enabled: true,
+      enabled: false, // blocks bots, disable
     },
     {
-      name: "USGS Water News",
-      url: "https://water.usgs.gov/alerts/project_alert.xml",
+      name: "USGS Water Resources",
+      url: "https://www.usgs.gov/rss/all/water-resources",
       category: "water",
       enabled: true,
     },
     {
       name: "US Drought Monitor",
-      url: "https://droughtmonitor.unl.edu/Data/RssFeeds/Category/National.xml",
+      url: "https://droughtmonitor.unl.edu/DmData/RssFeeds/dmfeed.aspx?type=txt",
       category: "drought",
-      enabled: true,
+      enabled: true, // corrected URL
     },
     {
       name: "Environment & Energy News",
       url: "https://www.eenews.net/rss/1",
       category: "legislation",
-      enabled: true,
+      enabled: false, // 404 previously, disable until confirmed
     },
     {
       name: "NRDC News",
@@ -43,7 +43,19 @@ export class NewsService {
       category: "general",
       enabled: true,
     },
-  ];
+    {
+      name: "CircleOfBlue Water News",
+      url: "https://www.circleofblue.org/feed/",
+      category: "water",
+      enabled: true,
+    },
+    {
+      name: "Inside Climate News",
+      url: "https://insideclimatenews.org/feed/",
+      category: "general",
+      enabled: true,
+    },
+  ]; 
 
   async getNews(category?: NewsCategory): Promise<NewsFeedResponse> {
     if (this.cache && Date.now() < this.cache.expiresAt) {

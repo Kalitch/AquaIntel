@@ -61,6 +61,7 @@ export interface IntelligenceResponse {
   aiImpact: AiImpact | null;
   analytics: IntelligenceAnalytics;
   droughtStatus: DroughtStatus | null;
+  stationStatus: StationStatus | null;
   percentiles: FlowPercentiles | null;
 }
 
@@ -164,4 +165,61 @@ export interface FlowPercentiles {
   currentPercentile: number | null;
   interpretation: string;
   recordYears: number | null;
+}
+
+export interface StationSnapshotRow {
+  observedAt: string;
+  flowValue: number | null;
+  sustainabilityScore: number | null;
+  anomalySeverity: string | null;
+  droughtSeverity: string | null;
+  currentPercentile: number | null;
+  movingAvg7: number | null;
+  movingAvg30: number | null;
+  volatilityIndex: number | null;
+}
+
+export interface StationStatus {
+  active: boolean;
+  lastRecordDate: string | null;
+  message: string;
+}
+
+export interface AnomalyEventRow {
+  detectedAt: string;
+  severity: string;
+  flowValue: number | null;
+  message: string | null;
+  droughtSeverity: string | null;
+  sustainabilityScore: number | null;
+}
+
+export interface ScoreTrendPoint {
+  date: string;
+  avgScore: number;
+  minScore: number;
+  maxScore: number;
+  sampleCount: number;
+}
+
+export interface StationHistoryResponse {
+  stationId: string;
+  totalSnapshots: number;
+  snapshots: StationSnapshotRow[];
+  anomalyEvents: AnomalyEventRow[];
+  scoreTrend: ScoreTrendPoint[];
+}
+
+export interface PlatformSummary {
+  totalSnapshots: number;
+  totalAnomalyEvents: number;
+  totalStationsTracked: number;
+  snapshotsLast24h: number;
+  snapshotsLast7d: number;
+  mostQueriedStations: Array<{
+    stationId: string;
+    totalQueries: number;
+    lastSeen: string;
+  }>;
+  recentAnomalies: Array<AnomalyEventRow & { stationId: string }>;
 }

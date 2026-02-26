@@ -18,6 +18,7 @@ import { WatchlistPanel } from '../components/dashboard/WatchlistPanel';
 import { useStation } from '../hooks/useStation';
 import { useIntelligence } from '../hooks/useApi';
 import { scoreToColor, scoreToLabel } from '../utils/formatters';
+import { StationStatusBanner } from '../components/shared/StationStatusBanner';
 
 export function DashboardPage() {
   const { stationId, stationName, setStation } = useStation();
@@ -83,6 +84,8 @@ export function DashboardPage() {
 
           {data && !loading && (
             <>
+              <StationStatusBanner stationStatus={data?.stationStatus} />
+
               {/* No data state */}
               {data.water.latest === null && data.water.dailySeries.length === 0 && (
                 <Alert severity="warning" sx={{ mb: 2 }}>
